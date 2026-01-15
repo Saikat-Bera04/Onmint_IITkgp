@@ -1,0 +1,39 @@
+# OnMint BNPL Protocol
+
+node_modules/
+dist/
+cache/
+artifacts/
+typechain-types/
+
+# Environment
+.env
+.env.local
+
+# Build outputs
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+coverage.json
+
+# Hardhat
+cache/
+artifacts/
