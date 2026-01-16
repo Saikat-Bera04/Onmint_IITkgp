@@ -17,6 +17,11 @@ import "./TrustScoreManager.sol";
 contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
+    // ============ Enums ============
+
+    /// @notice Loan status enumeration
+    enum LoanStatus { Active, Repaid, Defaulted }
+
     // ============ Structs ============
 
     /// @notice Represents a BNPL loan
@@ -30,6 +35,8 @@ contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
         uint256 dueDate;
         uint256 repaidAt;
         bool isRepaid;
+        LoanStatus status;
+        uint256 gracePeriodEnd;  // Due date + 7 days grace period
     }
 
     /// @notice Represents a merchant in the protocol
@@ -82,6 +89,15 @@ contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
     /// @notice Array of all merchant addresses
     address[] public merchantList;
 
+    /// @notice Blacklist mapping for defaulted users
+    mapping(address => bool) public blacklisted;
+
+    /// @notice Grace period for late payments (7 days after due date)
+    uint256 public constant GRACE_PERIOD = 7 days;
+
+    /// @notice Late payment penalty percentage (10%)
+    uint256 public constant LATE_PAYMENT_PENALTY = 10;
+
     // ============ Events ============
 
     event LoanCreated(
@@ -125,6 +141,23 @@ contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
         address indexed newManager
     );
 
+    event LoanDefaulted(
+        uint256 indexed loanId,
+        address indexed borrower,
+        uint256 remainingAmount
+    );
+
+    event LateRepayment(
+        uint256 indexed loanId,
+        address indexed borrower,
+        uint256 amount,
+        uint256 penalty
+    );
+
+    event UserBlacklisted(address indexed user);
+
+    event UserUnblacklisted(address indexed user);
+
     // ============ Errors ============
 
     error ZeroAddress();
@@ -139,6 +172,11 @@ contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
     error InsufficientLiquidity();
     error InsufficientAllowance();
     error LoanNotFound();
+    error BlacklistedUser();
+    error NotInGracePeriod();
+    error GracePeriodNotOver();
+    error LoanNotActive();
+    error NotPastDueDate();
 
     // ============ Constructor ============
 
@@ -260,6 +298,7 @@ contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
         if (_amount == 0) revert ZeroAmount();
         if (!merchants[_merchant].isApproved) revert MerchantNotApproved();
         if (activeLoanId[msg.sender] != 0) revert ActiveLoanExists();
+        if (blacklisted[msg.sender]) revert BlacklistedUser();
 
         // Check credit limit
         uint256 creditLimit = trustScoreManager.getCreditLimit(msg.sender);
@@ -282,7 +321,9 @@ contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
             createdAt: block.timestamp,
             dueDate: dueDate,
             repaidAt: 0,
-            isRepaid: false
+            isRepaid: false,
+            status: LoanStatus.Active,
+            gracePeriodEnd: dueDate + GRACE_PERIOD
         });
 
         activeLoanId[msg.sender] = loanId;
@@ -325,6 +366,7 @@ contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
         // Mark loan as fully repaid
         loan.amountRepaid = loan.amount;
         loan.isRepaid = true;
+        loan.status = LoanStatus.Repaid;
         loan.repaidAt = block.timestamp;
 
         // Clear active loan
@@ -386,6 +428,7 @@ contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
         // Check if fully repaid
         if (newRemaining == 0) {
             loan.isRepaid = true;
+            loan.status = LoanStatus.Repaid;
             loan.repaidAt = block.timestamp;
             activeLoanId[msg.sender] = 0;
 
@@ -427,6 +470,122 @@ contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
         return loan.amount / MAX_INSTALLMENTS;
     }
 
+    // ============ Default Handling Functions ============
+
+    /**
+     * @notice Marks a loan as defaulted if grace period has expired
+     * @param _loanId The loan ID to mark as defaulted
+     * @dev Can be called by anyone after grace period expires
+     */
+    function markAsDefaulted(uint256 _loanId) external nonReentrant {
+        if (_loanId == 0 || _loanId > totalLoans) revert LoanNotFound();
+        
+        Loan storage loan = loans[_loanId];
+        if (loan.status != LoanStatus.Active) revert LoanNotActive();
+        if (block.timestamp <= loan.gracePeriodEnd) revert GracePeriodNotOver();
+        
+        uint256 remainingAmount = loan.amount - loan.amountRepaid;
+        
+        // Mark loan as defaulted
+        loan.status = LoanStatus.Defaulted;
+        
+        // Clear active loan
+        activeLoanId[loan.borrower] = 0;
+        
+        // Penalize trust score
+        trustScoreManager.recordDefault(loan.borrower);
+        
+        // Blacklist the user
+        blacklisted[loan.borrower] = true;
+        
+        emit LoanDefaulted(_loanId, loan.borrower, remainingAmount);
+        emit UserBlacklisted(loan.borrower);
+    }
+
+    /**
+     * @notice Allows late repayment with penalty during grace period
+     * @param _amount The amount to repay (USDC with 6 decimals)
+     * @dev 10% penalty applies to late payments
+     */
+    function repayWithPenalty(uint256 _amount) external nonReentrant whenNotPaused {
+        if (_amount == 0) revert ZeroAmount();
+        
+        uint256 loanId = activeLoanId[msg.sender];
+        if (loanId == 0) revert NoActiveLoan();
+        
+        Loan storage loan = loans[loanId];
+        if (loan.status != LoanStatus.Active) revert LoanNotActive();
+        if (block.timestamp <= loan.dueDate) revert NotPastDueDate();
+        if (block.timestamp > loan.gracePeriodEnd) revert NotInGracePeriod();
+        
+        uint256 remainingAmount = loan.amount - loan.amountRepaid;
+        
+        // Cap payment at remaining amount
+        if (_amount > remainingAmount) {
+            _amount = remainingAmount;
+        }
+        
+        // Calculate 10% late fee
+        uint256 penalty = (_amount * LATE_PAYMENT_PENALTY) / 100;
+        uint256 totalAmount = _amount + penalty;
+        
+        // Check user has approved enough USDC (including penalty)
+        if (usdc.allowance(msg.sender, address(this)) < totalAmount) {
+            revert InsufficientAllowance();
+        }
+        
+        // Transfer USDC from user to contract (amount + penalty)
+        usdc.safeTransferFrom(msg.sender, address(this), totalAmount);
+        
+        // Update loan state
+        loan.amountRepaid += _amount;
+        uint256 newRemaining = loan.amount - loan.amountRepaid;
+        
+        emit LateRepayment(loanId, msg.sender, _amount, penalty);
+        
+        // Check if fully repaid
+        if (newRemaining == 0) {
+            loan.isRepaid = true;
+            loan.repaidAt = block.timestamp;
+            loan.status = LoanStatus.Repaid;
+            activeLoanId[msg.sender] = 0;
+            
+            // Reduced score increase for late payment
+            trustScoreManager.recordLateRepayment(msg.sender);
+            
+            emit LoanRepaid(loanId, msg.sender, loan.amount, false, block.timestamp);
+        }
+    }
+
+    /**
+     * @notice Admin function to blacklist a user
+     * @param _user The user address to blacklist
+     */
+    function blacklistUser(address _user) external onlyOwner {
+        if (_user == address(0)) revert ZeroAddress();
+        blacklisted[_user] = true;
+        emit UserBlacklisted(_user);
+    }
+
+    /**
+     * @notice Admin function to unblacklist a user
+     * @param _user The user address to unblacklist
+     */
+    function unblacklistUser(address _user) external onlyOwner {
+        if (_user == address(0)) revert ZeroAddress();
+        blacklisted[_user] = false;
+        emit UserUnblacklisted(_user);
+    }
+
+    /**
+     * @notice Checks if a user is blacklisted
+     * @param _user The user address to check
+     * @return True if blacklisted
+     */
+    function isBlacklisted(address _user) external view returns (bool) {
+        return blacklisted[_user];
+    }
+
     // ============ View Functions ============
 
     /**
@@ -437,7 +596,7 @@ contract BNPLCore is Ownable, ReentrancyGuard, Pausable {
     function getActiveLoan(address _user) external view returns (Loan memory) {
         uint256 loanId = activeLoanId[_user];
         if (loanId == 0) {
-            return Loan(0, address(0), address(0), 0, 0, 0, 0, 0, false);
+            return Loan(0, address(0), address(0), 0, 0, 0, 0, 0, false, LoanStatus.Active, 0);
         }
         return loans[loanId];
     }
