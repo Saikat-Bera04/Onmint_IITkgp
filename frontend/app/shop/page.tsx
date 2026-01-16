@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useCreditLimit, useHasActiveLoan } from '@/hooks/useContracts'
@@ -89,6 +89,18 @@ export default function ShopPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
 
+  useEffect(() => {
+    document.body.style.margin = '0';
+    document.documentElement.style.margin = '0';
+    document.documentElement.style.padding = '0';
+    
+    return () => {
+      document.body.style.margin = '';
+      document.documentElement.style.margin = '';
+      document.documentElement.style.padding = '';
+    };
+  }, []);
+
   const formattedCreditLimit = Number(creditLimit) / 1e6
 
   // Filter products
@@ -105,35 +117,39 @@ export default function ShopPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-2">
-              <ShoppingBag className="w-8 h-8" />
+            <h1 className="text-4xl font-bold text-white flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-red-600 rounded-xl flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-white" />
+              </div>
               <span>Shop</span>
             </h1>
-            <p className="text-gray-600 mt-1">Browse products and buy now, pay later</p>
+            <p className="text-gray-300 mt-2">Browse products and buy now, pay later with your Web3 credit</p>
           </div>
 
           {isConnected && (
-            <div className="bg-white rounded-xl px-4 py-2 shadow-sm border border-gray-100">
-              <p className="text-sm text-gray-500">Available Credit</p>
-              <p className="text-xl font-bold text-blue-600">${formattedCreditLimit.toFixed(2)} USDC</p>
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl px-6 py-3 border border-gray-700">
+              <p className="text-sm text-gray-400">Available Credit</p>
+              <p className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-red-400 bg-clip-text text-transparent">
+                ${formattedCreditLimit.toFixed(2)} USDC
+              </p>
             </div>
           )}
         </div>
 
         {/* Active Loan Warning */}
         {hasActiveLoan && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start space-x-3">
-            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="bg-yellow-900/20 border border-yellow-800/50 rounded-xl p-4 flex items-start space-x-3 backdrop-blur-sm">
+            <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-yellow-800">You have an active loan</p>
-              <p className="text-sm text-yellow-700">
+              <p className="font-medium text-yellow-300">You have an active loan</p>
+              <p className="text-sm text-yellow-400">
                 Please repay your current loan before making a new purchase.{' '}
-                <Link href="/repay" className="underline font-medium">Go to Repay</Link>
+                <Link href="/repay" className="font-medium text-yellow-300 hover:text-yellow-200 transition-colors">Go to Repay</Link>
               </p>
             </div>
           </div>
@@ -141,60 +157,75 @@ export default function ShopPage() {
 
         {/* Not Connected Warning */}
         {!isConnected && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
-            <h3 className="font-semibold text-blue-800 mb-2">Connect your wallet to shop</h3>
-            <p className="text-sm text-blue-600 mb-4">You need to connect your wallet to use Buy Now, Pay Later</p>
-            <ConnectButton />
+          <div className="bg-blue-900/20 border border-blue-800/50 rounded-xl p-6 text-center backdrop-blur-sm">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Wallet className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="font-semibold text-blue-300 mb-2 text-lg">Connect your wallet to shop</h3>
+            <p className="text-sm text-blue-400 mb-6">You need to connect your wallet to use Buy Now, Pay Later</p>
+            <div className="flex justify-center">
+              <ConnectButton />
+            </div>
           </div>
         )}
 
-        {/* Search and Filters */}
-        <div className="flex flex-col md:flex-row gap-4">
+        {/* Search and Filter */}
+        <div className="mb-8 bg-white/5 backdrop-blur-lg p-6 rounded-2xl border border-white/10 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-500" />
+            </div>
             <input
               type="text"
               placeholder="Search products..."
+              className="block w-full pl-10 pr-3 py-2.5 border border-gray-700 rounded-xl bg-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             />
           </div>
-          
-          <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-            <Filter className="w-5 h-5 text-gray-400 flex-shrink-0" />
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === category
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
+          <div className="flex-1">
+            <div className="relative">
+              <select
+                className="block w-full pl-3 pr-10 py-2.5 border border-gray-700 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none transition-all"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
               >
-                {category}
-              </button>
-            ))}
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <svg className="h-5 w-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onBuyNow={() => handleBuyNow(product)}
-              disabled={hasActiveLoan || !isConnected || product.price > formattedCreditLimit}
-            />
-          ))}
-        </div>
-
-        {/* No Results */}
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No products found matching your criteria</p>
+        {filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onBuyNow={handleBuyNow}
+                disabled={!isConnected || hasActiveLoan}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-12 text-center border border-gray-700">
+            <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-8 h-8 text-gray-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-200 mb-2">No products found</h3>
+            <p className="text-gray-400 max-w-md mx-auto">
+              We couldn't find any products matching your search. Try adjusting your filters.
+            </p>
           </div>
         )}
 

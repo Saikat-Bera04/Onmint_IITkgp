@@ -155,7 +155,7 @@ export default function CheckoutModal({ product, isOpen, onClose, onSuccess }: C
                 disabled={!hasEnoughCredit || isPending}
                 className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
                   hasEnoughCredit
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl'
+                    ? 'bg-gradient-to-r from-blue-600 to-red-600 text-white hover:from-blue-700 hover:to-red-700 shadow-lg hover:shadow-xl'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >

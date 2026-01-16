@@ -45,29 +45,29 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
       {/* Hero Section */}
       <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center space-y-8">
             {/* Badge */}
-            <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">
+            <div className="inline-flex items-center space-x-2 bg-blue-900/30 text-blue-300 px-4 py-2 rounded-full text-sm font-medium border border-blue-800/50">
               <Zap className="w-4 h-4" />
               <span>Web3&apos;s First Trust-Based Payment Layer</span>
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight">
               Build Credit,
               <br />
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
                 Unlock Freedom
               </span>
             </h1>
 
             {/* Subheading */}
-            <p className="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto">
-              Start with <span className="font-bold text-blue-600">10 USDC credit</span> instantly. 
+            <p className="text-xl sm:text-2xl text-gray-300 max-w-3xl mx-auto">
+              Start with <span className="font-bold text-blue-400">10 USDC credit</span> instantly. 
               Buy now, pay later. Build your Web3 reputation through responsible repayment.
             </p>
 
@@ -76,7 +76,7 @@ export default function HomePage() {
               {isConnected ? (
                 <Link
                   href="/dashboard"
-                  className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center space-x-2"
+                  className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-red-600 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center space-x-2"
                 >
                   <span>Go to Dashboard</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -84,13 +84,13 @@ export default function HomePage() {
               ) : (
                 <div className="flex flex-col items-center space-y-2">
                   <ConnectButton />
-                  <span className="text-sm text-gray-500">Connect to get started</span>
+                  <span className="text-sm text-gray-400">Connect to get started</span>
                 </div>
               )}
               
               <Link
                 href="/shop"
-                className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold text-lg hover:border-blue-500 hover:text-blue-600 transition-all"
+                className="px-8 py-4 border-2 border-gray-700 text-gray-300 rounded-xl font-semibold text-lg hover:border-blue-500 hover:text-white transition-all"
               >
                 Browse Shop
               </Link>
@@ -100,13 +100,13 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-900">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
               Why Choose OnMint?
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-300">
               The first truly under-collateralized BNPL for Web3
             </p>
           </div>
@@ -115,13 +115,13 @@ export default function HomePage() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="p-6 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 hover:shadow-lg transition-shadow"
+                className="p-6 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 hover:shadow-lg transition-shadow"
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-red-600 rounded-xl flex items-center justify-center text-white mb-4">
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
+                <p className="text-gray-300">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -132,10 +132,10 @@ export default function HomePage() {
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
               How It Works
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-300">
               Three simple steps to Web3 credit freedom
             </p>
           </div>
@@ -144,14 +144,14 @@ export default function HomePage() {
             {steps.map((step, index) => (
               <div key={index} className="relative">
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                     {step.number}
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{step.title}</h3>
-                  <p className="text-gray-600">{step.description}</p>
+                  <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
+                  <p className="text-gray-300">{step.description}</p>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-blue-300 to-purple-300" />
+                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-blue-700 to-red-700" />
                 )}
               </div>
             ))}
@@ -160,7 +160,7 @@ export default function HomePage() {
       </section>
 
       {/* Credit Score Preview */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 to-purple-600">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 to-red-600">
         <div className="max-w-4xl mx-auto text-center text-white">
           <h2 className="text-3xl sm:text-4xl font-bold mb-6">
             Your Trust Score Journey
@@ -196,8 +196,8 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 py-8 px-4 bg-white">
-        <div className="max-w-7xl mx-auto text-center text-gray-600">
+      <footer className="border-t border-gray-800 py-8 px-4 bg-gray-900">
+        <div className="max-w-7xl mx-auto text-center text-gray-400">
           <p className="text-sm">
             Built with ❤️ for Web3 Hackathon 2026 • Powered by Polygon Amoy & Circle USDC
           </p>
