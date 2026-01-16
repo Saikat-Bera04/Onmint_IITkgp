@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Web3Provider } from "@/components/providers/Web3Provider";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { Toaster } from "react-hot-toast";
 import NetworkChecker from "@/components/NetworkChecker";
 
@@ -28,9 +29,10 @@ export default function RootLayout({
         <Web3Provider>
           <NetworkChecker />
           <Navbar />
-          <main className="pt-16">
+          <main className="pt-16 min-h-[calc(100vh-4rem)]">
             {children}
           </main>
+          <Footer />
           <Toaster 
             position="top-right"
             toastOptions={{
