@@ -67,14 +67,14 @@ export const FloatingNav = ({
   const defaultNavItems = isConnected
     ? isAdmin
       ? [
-          { name: 'Dashboard', link: '/admin/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-          { name: 'Loans', link: '/admin/loans', icon: <CreditCard className="w-4 h-4" /> },
-          { name: 'Liquidity', link: '/admin/liquidity', icon: <Wallet className="w-4 h-4" /> },
-        ]
+        { name: 'Dashboard', link: '/admin/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+        { name: 'Loans', link: '/admin/loans', icon: <CreditCard className="w-4 h-4" /> },
+        { name: 'Liquidity', link: '/admin/liquidity', icon: <Wallet className="w-4 h-4" /> },
+      ]
       : [
-          { name: 'Dashboard', link: '/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-          { name: 'Shop', link: '/shop', icon: <ShoppingBag className="w-4 h-4" /> },
-        ]
+        { name: 'Dashboard', link: '/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+        { name: 'Shop', link: '/shop', icon: <ShoppingBag className="w-4 h-4" /> },
+      ]
     : []
 
   const items = navItems || defaultNavItems
@@ -97,7 +97,7 @@ export const FloatingNav = ({
           damping: 15,
         }}
         className={cn(
-          'fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-4xl border border-white/10 dark:border-gray-300/20 rounded-3xl bg-gray-900/10 backdrop-blur-xl shadow-2xl shadow-black/20 z-50 px-6 py-3 flex items-center justify-between space-x-4 relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10',
+          'fixed top-[26px] left-1/2 -translate-x-1/2 w-full max-w-4xl border border-white/10 dark:border-gray-300/20 rounded-3xl bg-gray-900/10 backdrop-blur-xl shadow-2xl shadow-black/20 z-50 px-6 py-3 flex items-center justify-between space-x-4 relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10',
           className,
         )}
       >
@@ -139,7 +139,7 @@ export const FloatingNav = ({
               key={`link-${idx}`}
               onHoverStart={() => setHoveredIndex(idx)}
               onHoverEnd={() => setHoveredIndex(null)}
-              scale={getScale(idx)}
+              animate={{ scale: getScale(idx) }}
             >
               <Link
                 href={navItem.link}
@@ -154,24 +154,76 @@ export const FloatingNav = ({
 
         {/* Wallet Connection Section */}
         <div className="flex items-center space-x-2 flex-shrink-0">
-          {isConnected ? (
-            <div className="flex items-center space-x-2">
-              <button
-                className="bg-white/10 border border-white/20 text-white hover:bg-white/20 text-sm px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
-                onClick={copyAddress}
-              >
-                <Copy className="w-3 h-3" />
-                <span>{address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Connected'}</span>
-              </button>
-            </div>
-          ) : (
-            <ConnectButton
-              accountStatus="address"
-              showBalance={false}
-              chainStatus="icon"
-              label="Connect Wallet"
-            />
-          )}
+          <ConnectButton.Custom>
+            {({
+              account,
+              chain,
+              openAccountModal,
+              openConnectModal,
+              authenticationStatus,
+              mounted,
+            }) => {
+              const ready = mounted && authenticationStatus !== 'loading';
+              const connected =
+                ready &&
+                account &&
+                chain &&
+                (!authenticationStatus ||
+                  authenticationStatus === 'authenticated');
+
+              return (
+                <div
+                  {...(!ready && {
+                    'aria-hidden': true,
+                    'style': {
+                      opacity: 0,
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                    },
+                  })}
+                >
+                  {(() => {
+                    if (!connected) {
+                      return (
+                        <button
+                          onClick={openConnectModal}
+                          className="bg-white/10 border border-white/20 text-white hover:bg-white/20 text-sm px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
+                        >
+                          <Wallet className="w-4 h-4" />
+                          <span>Connect Wallet</span>
+                        </button>
+                      );
+                    }
+
+                    if (chain.unsupported) {
+                      return (
+                        <button
+                          onClick={openConnectModal}
+                          className="bg-red-500/10 border border-red-500/50 text-red-500 hover:bg-red-500/20 text-sm px-4 py-2 rounded-lg transition-colors duration-200"
+                        >
+                          Wrong Network
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <button
+                        onClick={openAccountModal}
+                        className="bg-white/10 border border-white/20 text-white hover:bg-white/20 text-sm px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
+                      >
+                        {account.ensAvatar ? (
+                          <img src={account.ensAvatar} alt="ENS Avatar" className="w-4 h-4 rounded-full" />
+                        ) : (
+                          <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-400 to-purple-500" />
+                        )}
+                        <span>{account.displayName}</span>
+                      </button>
+                    );
+                  })()}
+                </div>
+              );
+            }}
+          </ConnectButton.Custom>
         </div>
       </motion.div>
     </AnimatePresence>
