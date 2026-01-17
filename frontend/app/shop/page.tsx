@@ -117,8 +117,8 @@ export default function ShopPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="min-h-screen bg-black text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 bg-black">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
@@ -132,7 +132,7 @@ export default function ShopPage() {
           </div>
 
           {isConnected && (
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl px-6 py-3 border border-gray-700">
+            <div className="bg-black border border-gray-800 rounded-xl px-6 py-3">
               <p className="text-sm text-gray-400">Available Credit</p>
               <p className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-red-400 bg-clip-text text-transparent">
                 ${formattedCreditLimit.toFixed(2)} USDC
@@ -143,7 +143,7 @@ export default function ShopPage() {
 
         {/* Active Loan Warning */}
         {hasActiveLoan && (
-          <div className="bg-yellow-900/20 border border-yellow-800/50 rounded-xl p-4 flex items-start space-x-3 backdrop-blur-sm">
+          <div className="bg-black border border-yellow-800/50 rounded-xl p-4 flex items-start space-x-3">
             <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-medium text-yellow-300">You have an active loan</p>
@@ -157,7 +157,7 @@ export default function ShopPage() {
 
         {/* Not Connected Warning */}
         {!isConnected && (
-          <div className="bg-blue-900/20 border border-blue-800/50 rounded-xl p-6 text-center backdrop-blur-sm">
+          <div className="bg-black border border-blue-900/50 rounded-xl p-6 text-center">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Wallet className="w-6 h-6 text-white" />
             </div>
@@ -170,15 +170,15 @@ export default function ShopPage() {
         )}
 
         {/* Search and Filter */}
-        <div className="mb-8 bg-white/5 backdrop-blur-lg p-6 rounded-2xl border border-white/10 flex flex-col sm:flex-row gap-4">
+        <div className="mb-8 bg-black border border-gray-800 rounded-xl p-4 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-500" />
+              <Search className="h-5 w-5 text-gray-400" />
             </div>
             <input
               type="text"
               placeholder="Search products..."
-              className="block w-full pl-10 pr-3 py-2.5 border border-gray-700 rounded-xl bg-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="block w-full pl-10 pr-3 py-2.5 border border-gray-800 rounded-lg bg-black text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -186,7 +186,7 @@ export default function ShopPage() {
           <div className="flex-1">
             <div className="relative">
               <select
-                className="block w-full pl-3 pr-10 py-2.5 border border-gray-700 rounded-xl bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none transition-all"
+                className="block w-full sm:w-48 px-3 py-2.5 border border-gray-800 rounded-lg bg-black text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
@@ -206,7 +206,24 @@ export default function ShopPage() {
         </div>
 
         {/* Products Grid */}
-        {filteredProducts.length > 0 ? (
+        {filteredProducts.length === 0 ? (
+          <div className="bg-black border border-gray-800 rounded-xl p-8 text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <ShoppingBag className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="font-semibold text-white text-xl mb-2">No products found</h3>
+            <p className="text-sm text-gray-400 mb-6">Try adjusting your search or filters</p>
+            <button 
+              onClick={() => {
+                setSearchQuery('')
+                setSelectedCategory('All')
+              }}
+              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all border border-blue-500/30"
+            >
+              Clear all filters
+            </button>
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
               <ProductCard
