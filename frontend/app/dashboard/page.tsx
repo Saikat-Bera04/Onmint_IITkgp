@@ -2,7 +2,7 @@
 
 import { useAccount } from 'wagmi'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { 
   useUserCreditInfo,
@@ -17,30 +17,89 @@ import {
   ArrowRight,
   Wallet,
   CreditCard,
-  Zap
+  Zap,
+  AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import MagicBorderButton from '@/components/ui/button'
 
 export default function DashboardPage() {
+  const [mounted, setMounted] = useState(false)
   const { address, isConnected } = useAccount()
   const router = useRouter()
   const isAdmin = useIsAdmin()
   
-  const { data: creditInfo } = useUserCreditInfo(address)
-  const { data: hasActiveLoan = false } = useHasActiveLoan(address)
+  const { data: creditInfo, isLoading: creditLoading, refetch: refetchCredit, error: creditError } = useUserCreditInfo(address)
+  const { data: hasActiveLoan = false, isLoading: loanLoading, refetch: refetchLoan, error: loanError } = useHasActiveLoan(address)
+
+  // Debug logging
+  useEffect(() => {
+    if (mounted && address) {
+      console.log('[Dashboard] Address:', address)
+      console.log('[Dashboard] Credit Info:', creditInfo)
+      console.log('[Dashboard] Credit Loading:', creditLoading)
+      console.log('[Dashboard] Credit Error:', creditError)
+      console.log('[Dashboard] Has Active Loan:', hasActiveLoan)
+      console.log('[Dashboard] Loan Error:', loanError)
+      
+      // Show user-friendly error for contract issues
+      if (creditError && creditError.message?.includes('out of bounds')) {
+        console.error('❌ Contract initialization error detected. Contracts may not be properly linked on-chain.')
+      }
+    }
+  }, [mounted, address, creditInfo, creditLoading, creditError, hasActiveLoan, loanError])
+
+  // Handle hydration
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Refetch data when page becomes visible (e.g., after returning from shop)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && mounted && address) {
+        refetchCredit()
+        refetchLoan()
+      }
+    }
+    
+    // Also refetch when component mounts (page navigation)
+    if (mounted && address) {
+      refetchCredit()
+      refetchLoan()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [mounted, address, refetchCredit, refetchLoan])
 
   // Parse credit info: [score, totalScore, walletBonus, zkBoost, creditLimit]
   const creditData = creditInfo as readonly [bigint, bigint, bigint, bigint, bigint] | undefined
   const totalScore = creditData ? Number(creditData[1]) : 0
   const creditLimit = creditData ? Number(creditData[4]) : 0
+  const formattedCreditLimit = creditLimit / 1e6
+  
+  // Show error state if contracts aren't working
+  const hasContractError = creditError && (creditError.message?.includes('out of bounds') || creditError.message?.includes('could not decode'))
 
   // Redirect admin to admin dashboard
   useEffect(() => {
-    if (isConnected && isAdmin) {
+    if (mounted && isConnected && isAdmin) {
       router.push('/admin/dashboard')
     }
-  }, [isConnected, isAdmin, router])
+  }, [mounted, isConnected, isAdmin, router])
+
+  // Show loading state during hydration
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br via-black to-gray-900 flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center space-y-4">
+          <div className="w-16 h-16 bg-gray-700 rounded-2xl"></div>
+          <div className="h-4 bg-gray-700 rounded w-32"></div>
+        </div>
+      </div>
+    )
+  }
 
   if (!isConnected) {
     return (
@@ -59,11 +118,22 @@ export default function DashboardPage() {
     )
   }
 
-  const formattedCreditLimit = creditLimit / 1e6
-
   return (
     <div className="min-h-screen bg-gradient-to-br  via-black to-gray-900 py-8 px-4">
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Contract Error Alert */}
+        {hasContractError && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+            <div className="flex items-center space-x-3">
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-red-300 font-semibold">Contract Initialization Error</p>
+                <p className="text-red-200 text-sm mt-1">The smart contracts are not properly initialized. Please contact the administrator to link WalletAnalyzer and ZKVerifier contracts.</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
@@ -116,8 +186,8 @@ export default function DashboardPage() {
                 <Wallet className="w-6 h-6 text-green-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Credit Limit</p>
-                <p className="text-3xl font-bold text-green-600">${formattedCreditLimit.toFixed(2)}</p>
+                <p className="text-sm text-gray-400">Credit Limit</p>
+                <p className="text-3xl font-bold text-green-400">${formattedCreditLimit.toFixed(2)}</p>
               </div>
             </div>
           </div>
@@ -127,8 +197,8 @@ export default function DashboardPage() {
                 <Zap className="w-6 h-6 text-red-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Loan Status</p>
-                <p className={`text-lg font-bold ${hasActiveLoan ? 'text-orange-600' : 'text-gray-400'}`}>
+                <p className="text-sm text-gray-400">Loan Status</p>
+                <p className={`text-lg font-bold ${hasActiveLoan ? 'text-orange-400' : 'text-gray-500'}`}>
                   {hasActiveLoan ? 'Active Loan' : 'No Active Loan'}
                 </p>
               </div>
@@ -149,14 +219,14 @@ export default function DashboardPage() {
             {hasActiveLoan ? (
               <ActiveLoanCard />
             ) : (
-              <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700">
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700 hover:border-blue-500/50 transition-all">
                 <div className="text-center space-y-4">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto">
                     <ShoppingBag className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">Ready to Shop?</h3>
-                  <p className="text-gray-600">
-                    You have <span className="font-bold text-blue-600">${formattedCreditLimit.toFixed(2)} USDC</span> credit available!
+                  <h3 className="text-xl font-bold text-white">Ready to Shop?</h3>
+                  <p className="text-gray-400">
+                    You have <span className="font-bold text-blue-400">${formattedCreditLimit.toFixed(2)} USDC</span> credit available!
                   </p>
                   <Link href="/shop" className="w-full inline-block">
                     <MagicBorderButton className="w-full">

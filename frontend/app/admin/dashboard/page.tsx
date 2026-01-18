@@ -88,7 +88,7 @@ export default function AdminDashboardPage() {
   const totalRepaid = completedLoans.reduce((sum, l) => sum + Number(l.amount), 0) / 1e6
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen  py-8 px-4">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -107,7 +107,7 @@ export default function AdminDashboardPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-sm border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-blue-600" />
@@ -119,7 +119,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-sm border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Users className="w-5 h-5 text-purple-600" />
@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-sm border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-green-600" />
@@ -143,7 +143,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-sm border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-emerald-600" />
@@ -158,7 +158,7 @@ export default function AdminDashboardPage() {
 
         {/* Loan Status Cards */}
         <div className="grid md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-sm border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Active Loans</h3>
               <Clock className="w-5 h-5 text-yellow-500" />
@@ -169,7 +169,7 @@ export default function AdminDashboardPage() {
             </p>
           </div>
           
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-sm border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Completed</h3>
               <CheckCircle className="w-5 h-5 text-green-500" />
@@ -180,7 +180,7 @@ export default function AdminDashboardPage() {
             </p>
           </div>
           
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-sm border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Overdue</h3>
               <AlertTriangle className="w-5 h-5 text-red-500" />
@@ -223,7 +223,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Recent Loans */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-sm border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-900">Recent Loans</h3>
             <Link
@@ -297,7 +297,7 @@ export default function AdminDashboardPage() {
         <div className="grid md:grid-cols-2 gap-6">
           <Link
             href="/admin/loans"
-            className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex items-center justify-between"
+            className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-sm border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300 flex items-center justify-between"
           >
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -313,7 +313,7 @@ export default function AdminDashboardPage() {
           
           <Link
             href="/admin/liquidity"
-            className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex items-center justify-between"
+            className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-sm border border-white/20 hover:border-red-500/50 hover:bg-red-500/10 transition-all duration-300 flex items-center justify-between"
           >
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">

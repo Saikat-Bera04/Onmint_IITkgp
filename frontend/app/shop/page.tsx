@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
+import { useRouter } from 'next/navigation'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useCreditLimit, useHasActiveLoan } from '@/hooks/useContracts'
 import ProductCard from '@/components/ProductCard'
@@ -80,14 +81,22 @@ const products = [
 const categories = ['All', 'Art', 'Domains', 'Music', 'Gaming', 'Education', 'Lifestyle', 'Events']
 
 export default function ShopPage() {
+  const router = useRouter()
   const { address, isConnected } = useAccount()
-  const { data: creditLimit = BigInt(0) } = useCreditLimit(address)
-  const { data: hasActiveLoan = false } = useHasActiveLoan(address)
+  const { data: creditLimit = BigInt(0), isLoading: creditLoading, refetch: refetchCredit } = useCreditLimit(address)
+  const { data: hasActiveLoan = false, isLoading: loanLoading, refetch: refetchLoan } = useHasActiveLoan(address)
   
   const [selectedProduct, setSelectedProduct] = useState<typeof products[0] | null>(null)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
+
+  const handlePurchaseSuccess = () => {
+    // Refetch data and redirect to dashboard
+    refetchCredit()
+    refetchLoan()
+    router.push('/dashboard')
+  }
 
   useEffect(() => {
     document.body.style.margin = '0';
@@ -112,9 +121,15 @@ export default function ShopPage() {
   })
 
   const handleBuyNow = (product: typeof products[0]) => {
+    console.log('Buy Now clicked for:', product.name)
+    console.log('isConnected:', isConnected)
+    console.log('hasActiveLoan:', hasActiveLoan)
     setSelectedProduct(product)
     setIsCheckoutOpen(true)
   }
+
+  // Button is disabled if: not connected, or has active loan, or still loading data
+  const isButtonDisabled = !isConnected || hasActiveLoan === true
 
   return (
     <div className="min-h-screen relative">
@@ -231,7 +246,7 @@ export default function ShopPage() {
                 key={product.id}
                 product={product}
                 onBuyNow={handleBuyNow}
-                disabled={!isConnected || hasActiveLoan}
+                disabled={isButtonDisabled}
               />
             ))}
           </div>
@@ -256,6 +271,7 @@ export default function ShopPage() {
               setSelectedProduct(null)
             }}
             product={selectedProduct}
+            onSuccess={handlePurchaseSuccess}
           />
         )}
       </div>

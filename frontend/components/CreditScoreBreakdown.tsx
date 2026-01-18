@@ -2,7 +2,7 @@
 
 import { useAccount, useReadContract } from 'wagmi'
 import { useUserCreditInfo } from '@/hooks/useContracts'
-import { Wallet, CheckCircle, RefreshCw, ArrowRight, Shield, Clock, TrendingUp } from 'lucide-react'
+import { Wallet, CheckCircle, RefreshCw, ArrowRight, Shield, Clock, TrendingUp, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { ZK_VERIFIER_ADDRESS } from '@/lib/constants'
@@ -40,13 +40,14 @@ const ZK_VERIFIER_ABI = [
 
 export default function CreditScoreBreakdown() {
   const { address } = useAccount()
+  const [mounted, setMounted] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [isRefreshing, setIsRefreshing] = useState(false)
   
   // Fetch credit info from TrustScoreManager (on-chain)
   const { 
     data: creditInfo, 
-    isLoading, 
+    isLoading: creditLoading, 
     refetch: refetchCreditInfo 
   } = useUserCreditInfo(address)
 
@@ -60,7 +61,7 @@ export default function CreditScoreBreakdown() {
     functionName: 'hasValidProof',
     args: address ? [address] : undefined,
     query: {
-      enabled: !!address && !!ZK_VERIFIER_ADDRESS,
+      enabled: !!address && !!ZK_VERIFIER_ADDRESS && ZK_VERIFIER_ADDRESS !== '0x0000000000000000000000000000000000000000',
     },
   })
 
@@ -74,9 +75,21 @@ export default function CreditScoreBreakdown() {
     functionName: 'getProofDetails',
     args: address ? [address] : undefined,
     query: {
-      enabled: !!address && !!ZK_VERIFIER_ADDRESS,
+      enabled: !!address && !!ZK_VERIFIER_ADDRESS && ZK_VERIFIER_ADDRESS !== '0x0000000000000000000000000000000000000000',
     },
   })
+
+  // Handle hydration
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  // Refetch data when component mounts (after navigation)
+  useEffect(() => {
+    if (mounted && address) {
+      refetchCreditInfo()
+    }
+  }, [mounted, address, refetchCreditInfo])
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -97,13 +110,15 @@ export default function CreditScoreBreakdown() {
     setIsRefreshing(false)
   }
 
-  if (isLoading || !creditInfo) {
+  const isLoading = !mounted || creditLoading || !creditInfo
+
+  if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 animate-pulse">
-        <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/20 animate-pulse">
+        <div className="h-6 bg-gray-700 rounded w-1/3 mb-4"></div>
         <div className="space-y-3">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-16 bg-gray-200 rounded w-full"></div>
+            <div key={i} className="h-16 bg-gray-700 rounded w-full"></div>
           ))}
         </div>
       </div>
@@ -117,6 +132,9 @@ export default function CreditScoreBreakdown() {
   const wallet = Number(creditData[2])
   const zk = Number(creditData[3])
   const limit = (Number(creditData[4]) / 1e6).toFixed(2)
+  
+  // Show message if wallet/zk bonuses are 0 (contracts may not be linked)
+  const contractsNotLinked = wallet === 0 && zk === 0 && repayment === 0
 
   // Parse ZK proof details
   const zkProofInfo = proofDetails ? {
@@ -133,7 +151,17 @@ export default function CreditScoreBreakdown() {
   const calculatedLimit = baseLimit + bonusCredit
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+    <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-lg border border-white/20 overflow-hidden hover:border-red-500/50 transition-all duration-300">
+      {/* Contracts not linked warning */}
+      {contractsNotLinked && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-6 py-3">
+          <p className="text-yellow-300 text-sm flex items-center">
+            <AlertCircle className="w-4 h-4 mr-2" />
+            Wallet & ZK bonuses unavailable - contracts may need linking
+          </p>
+        </div>
+      )}
+      
       {/* Header with refresh */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -162,29 +190,29 @@ export default function CreditScoreBreakdown() {
 
       <div className="p-6 space-y-4">
         {/* Repayment Score */}
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+        <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/30">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center space-x-2">
               <div className="bg-blue-500 p-1.5 rounded-lg">
                 <TrendingUp className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="font-bold text-gray-900">Repayment Score</p>
-                <p className="text-xs text-gray-600">From loan repayment behavior</p>
+                <p className="font-bold text-white">Repayment Score</p>
+                <p className="text-xs text-gray-400">From loan repayment behavior</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-blue-600">{repayment}</p>
+              <p className="text-3xl font-bold text-blue-400">{repayment}</p>
               <p className="text-xs text-gray-500">/ 100 max</p>
             </div>
           </div>
-          <div className="bg-white rounded-full h-3 overflow-hidden">
+          <div className="bg-gray-700 rounded-full h-3 overflow-hidden">
             <div 
               className="bg-gradient-to-r from-blue-400 to-blue-600 h-full rounded-full transition-all duration-500"
               style={{ width: `${Math.min((repayment / 100) * 100, 100)}%` }}
             ></div>
           </div>
-          <div className="mt-3 text-xs text-gray-600 bg-white/50 rounded-lg p-2">
+          <div className="mt-3 text-xs text-gray-300 bg-white/5 rounded-lg p-2">
             {repayment === 0 ? (
               <span>💡 <strong>How to earn:</strong> Complete BNPL loans on time (+10 pts) or early (+15 pts)</span>
             ) : (
@@ -194,53 +222,53 @@ export default function CreditScoreBreakdown() {
         </div>
 
         {/* Wallet Bonus */}
-        <div className="bg-gradient-to-r from-green-50 to-emerald-100 rounded-xl p-4 border border-green-200">
+        <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/30">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center space-x-2">
               <div className="bg-green-500 p-1.5 rounded-lg">
                 <Wallet className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="font-bold text-gray-900">Wallet History Bonus</p>
-                <p className="text-xs text-gray-600">On-chain wallet analysis</p>
+                <p className="font-bold text-white">Wallet History Bonus</p>
+                <p className="text-xs text-gray-400">On-chain wallet analysis</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-green-600">+{wallet}</p>
+              <p className="text-3xl font-bold text-green-400">+{wallet}</p>
               <p className="text-xs text-gray-500">/ 60 max</p>
             </div>
           </div>
-          <div className="bg-white rounded-full h-3 overflow-hidden">
+          <div className="bg-gray-700 rounded-full h-3 overflow-hidden">
             <div 
               className="bg-gradient-to-r from-green-400 to-emerald-500 h-full rounded-full transition-all duration-500"
               style={{ width: `${Math.min((wallet / 60) * 100, 100)}%` }}
             ></div>
           </div>
-          <div className="mt-3 text-xs text-gray-600 bg-white/50 rounded-lg p-2">
+          <div className="mt-3 text-xs text-gray-300 bg-white/5 rounded-lg p-2">
             <span>✅ <strong>Auto-calculated:</strong> Based on wallet age, transaction history, and balance</span>
           </div>
         </div>
 
         {/* ZK Proof Boost */}
-        <div className={`rounded-xl p-4 border ${hasValidProof && zk > 0 ? 'bg-gradient-to-r from-purple-50 to-pink-100 border-purple-200' : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'}`}>
+        <div className={`rounded-xl p-4 border ${hasValidProof && zk > 0 ? 'bg-purple-500/10 border-purple-500/30' : 'bg-gray-500/10 border-gray-500/30'}`}>
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center space-x-2">
-              <div className={`p-1.5 rounded-lg ${hasValidProof && zk > 0 ? 'bg-purple-500' : 'bg-gray-400'}`}>
+              <div className={`p-1.5 rounded-lg ${hasValidProof && zk > 0 ? 'bg-purple-500' : 'bg-gray-500'}`}>
                 <Shield className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="font-bold text-gray-900">ZK Proof Boost</p>
-                <p className="text-xs text-gray-600">Privacy-preserving verification</p>
+                <p className="font-bold text-white">ZK Proof Boost</p>
+                <p className="text-xs text-gray-400">Privacy-preserving verification</p>
               </div>
             </div>
             <div className="text-right">
-              <p className={`text-3xl font-bold ${hasValidProof && zk > 0 ? 'text-purple-600' : 'text-gray-400'}`}>+{zk}</p>
+              <p className={`text-3xl font-bold ${hasValidProof && zk > 0 ? 'text-purple-400' : 'text-gray-500'}`}>+{zk}</p>
               <p className="text-xs text-gray-500">/ 30 max</p>
             </div>
           </div>
-          <div className="bg-white rounded-full h-3 overflow-hidden">
+          <div className="bg-gray-700 rounded-full h-3 overflow-hidden">
             <div 
-              className={`h-full rounded-full transition-all duration-500 ${hasValidProof && zk > 0 ? 'bg-gradient-to-r from-purple-400 to-pink-500' : 'bg-gray-300'}`}
+              className={`h-full rounded-full transition-all duration-500 ${hasValidProof && zk > 0 ? 'bg-gradient-to-r from-purple-400 to-pink-500' : 'bg-gray-600'}`}
               style={{ width: `${Math.min((zk / 30) * 100, 100)}%` }}
             ></div>
           </div>
@@ -248,13 +276,13 @@ export default function CreditScoreBreakdown() {
           {/* ZK Proof Status & Action */}
           <div className="mt-3">
             {hasValidProof && zk > 0 ? (
-              <div className="bg-white/50 rounded-lg p-3 space-y-2">
-                <div className="flex items-center space-x-2 text-green-600">
+              <div className="bg-white/5 rounded-lg p-3 space-y-2">
+                <div className="flex items-center space-x-2 text-green-400">
                   <CheckCircle className="w-4 h-4" />
                   <span className="text-sm font-semibold">Proof Verified!</span>
                 </div>
                 {zkProofInfo && (
-                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
                     <div>
                       <span className="font-medium">Threshold:</span> ≥{zkProofInfo.threshold} USDC
                     </div>
@@ -269,10 +297,10 @@ export default function CreditScoreBreakdown() {
                 )}
               </div>
             ) : (
-              <div className="bg-white/50 rounded-lg p-3 space-y-3">
-                <div className="text-xs text-gray-700">
+              <div className="bg-white/5 rounded-lg p-3 space-y-3">
+                <div className="text-xs text-gray-300">
                   <p className="font-semibold mb-1">🔐 How to unlock +10 to +30 bonus points:</p>
-                  <ol className="list-decimal list-inside space-y-1 text-gray-600">
+                  <ol className="list-decimal list-inside space-y-1 text-gray-400">
                     <li>Go to the ZK Proof page</li>
                     <li>Select a balance threshold (1, 11, or 101 USDC)</li>
                     <li>Generate a zero-knowledge proof</li>
@@ -335,7 +363,7 @@ export default function CreditScoreBreakdown() {
         </div>
 
         {/* On-chain verification badge */}
-        <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 pt-2">
+        <div className="flex items-center justify-center space-x-2 text-xs text-gray-400 pt-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <span>Data fetched from Polygon Amoy blockchain in real-time</span>
         </div>

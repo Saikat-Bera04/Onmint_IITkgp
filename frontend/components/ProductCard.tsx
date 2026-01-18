@@ -15,7 +15,7 @@ interface Product {
 
 interface ProductCardProps {
   product: Product
-  onBuyNow: () => void
+  onBuyNow: (product: Product) => void
   disabled?: boolean
 }
 
@@ -70,20 +70,19 @@ export default function ProductCard({ product, onBuyNow, disabled }: ProductCard
             <span className="text-xl font-bold text-white">${product.price.toFixed(2)} <span className="text-sm font-normal text-gray-400">USDC</span></span>
           </div>
           
-          <MagicBorderButton
-            onClick={(e: React.MouseEvent) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onBuyNow();
-            }}
+          <button
+            onClick={() => onBuyNow(product)}
             disabled={disabled}
-            className={disabled ? 'opacity-50 cursor-not-allowed' : ''}
+            className={`relative inline-flex h-12 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <span className="flex items-center justify-center space-x-2">
-              <ShoppingBag className="w-4 h-4" />
-              <span>Buy Now</span>
+            <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
+            <span className={`inline-flex h-full w-full items-center justify-center rounded-full bg-slate-950 px-6 py-1 text-sm font-medium text-white backdrop-blur-3xl ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+              <span className="flex items-center justify-center space-x-2">
+                <ShoppingBag className="w-4 h-4" />
+                <span>Buy Now</span>
+              </span>
             </span>
-          </MagicBorderButton>
+          </button>
         </div>
       </div>
     </div>

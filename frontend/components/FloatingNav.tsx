@@ -8,10 +8,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 
-import { useAccount } from 'wagmi'
+import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useIsAdmin } from '@/hooks/useIsAdmin'
-import { LayoutDashboard, ShoppingBag, CreditCard, Wallet, Copy } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, CreditCard, Wallet, Copy, LogOut } from 'lucide-react'
 import { ReactNode } from 'react'
 
 const poppins = Poppins({
@@ -34,6 +34,8 @@ export const FloatingNav = ({
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const { address, isConnected } = useAccount()
+  const { connect, connectors } = useConnect()
+  const { disconnect } = useDisconnect()
   const isAdmin = useIsAdmin()
   const router = useRouter()
 
@@ -60,6 +62,23 @@ export const FloatingNav = ({
       // Successfully copied
     } catch {
       // Failed to copy
+    }
+  }
+
+  const handleConnectWallet = () => {
+    // Find MetaMask connector
+    const metaMaskConnector = connectors.find(
+      (connector) => connector.id === 'io.metamask' || connector.name === 'MetaMask'
+    )
+    
+    if (metaMaskConnector) {
+      // Directly connect to MetaMask
+      connect({ connector: metaMaskConnector })
+    } else {
+      // Fallback to first available connector if MetaMask not found
+      if (connectors[0]) {
+        connect({ connector: connectors[0] })
+      }
     }
   }
 
@@ -186,7 +205,7 @@ export const FloatingNav = ({
                     if (!connected) {
                       return (
                         <button
-                          onClick={openConnectModal}
+                          onClick={handleConnectWallet}
                           className="bg-white/10 border border-white/20 text-white hover:bg-white/20 text-sm px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
                         >
                           <Wallet className="w-4 h-4" />
@@ -195,28 +214,14 @@ export const FloatingNav = ({
                       );
                     }
 
-                    if (chain.unsupported) {
-                      return (
-                        <button
-                          onClick={openConnectModal}
-                          className="bg-red-500/10 border border-red-500/50 text-red-500 hover:bg-red-500/20 text-sm px-4 py-2 rounded-lg transition-colors duration-200"
-                        >
-                          Wrong Network
-                        </button>
-                      );
-                    }
-
+                    // Always show disconnect button when connected
                     return (
                       <button
-                        onClick={openAccountModal}
-                        className="bg-white/10 border border-white/20 text-white hover:bg-white/20 text-sm px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
+                        onClick={() => disconnect()}
+                        className="bg-white/10 border border-white/20 text-white hover:bg-red-500/20 hover:border-red-500/50 text-sm px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors duration-200"
                       >
-                        {account.ensAvatar ? (
-                          <img src={account.ensAvatar} alt="ENS Avatar" className="w-4 h-4 rounded-full" />
-                        ) : (
-                          <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-400 to-purple-500" />
-                        )}
-                        <span>{account.displayName}</span>
+                        <LogOut className="w-4 h-4" />
+                        <span>Disconnect</span>
                       </button>
                     );
                   })()}
